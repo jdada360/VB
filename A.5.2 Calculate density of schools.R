@@ -34,7 +34,7 @@ for (i in slist){
   #                      y = y)) + geom_point(size = 0.5))
   # To avoid calculating the distance for a large number of school pairs, 
   # we "join" them by approximate coordinates, rounding them to one tenth 
-  # of latitude and longitude units, and creating "tables" with them.
+  # of latitude and longitude units, and creating "tables" with them
 }
 
 for (i in slist){
