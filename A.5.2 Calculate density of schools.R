@@ -95,8 +95,7 @@ merge_list[[i]] <- left_join(merge_list[[i]], p_s_list[[i]],
     summarise_at(c("u0","u1","u2","u3","u4","u5",
                    "u6","u7","u8","u9","u10"),
                  sum, na.rm = T)
-    
-}
+  
 
 
 p_s_list <- bind_rows(p_s_list) %>% 
