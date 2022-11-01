@@ -7,8 +7,7 @@ crd_ggl_raw <- crd_ggl
 p_s_list <- list()
 merge_list <- list()
 cross_list <- list()
-# dist_list_1 <- list()
-# dist_list_2 <- list()
+
 
 for (i in slist){
   p_s_list[[i]] <- read_dta(
