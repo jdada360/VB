@@ -23,7 +23,7 @@ for (i in slist){
                              1,10)) %>% 
     dplyr::select(c("schoolid","lat","lng")) %>% 
     distinct() %>%  
-    left_join(., crd_ggl, by = "schoolid") %>%                                      # We bring the coordinates fetched from Google Maps
+    left_join(., crd_ggl, by = "schoolid") %>%                                  
     mutate(x = ifelse(!is.na(g_lng), g_lng, lng),
            y = ifelse(!is.na(g_lat), g_lat, lat)) %>% 
     dplyr::select(c("schoolid","x","y")) %>% 
