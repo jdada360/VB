@@ -253,7 +253,7 @@ clean_19 <- VB_1819 %>%
          "maternallastname" = substr(maternallastname,1,20),
          across(ends_with("name"),toupper),
          across(ends_with("name"),trimws)) %>% 
-  mutate("eyeexamdate" = as.Date(eyeexamdate, "%d/%m/%y")) %>%
+  mutate(eyeexamdate = as.Date(eyeexamdate, "%d/%m/%y")) %>%
   dplyr::select("schoolid","shift","grade","group","givenname",
                 "paternallastname","maternallastname",
                 "age","gender","diagre","diagle","vadre_withoutrx",
@@ -684,7 +684,8 @@ mutate(across(c("av_s_rx_od","av_s_rx_oi","av_c_rx_od","av_c_rx_oi","age",
                    "vadle_withrx","haswornglasses",
                    "wearsglasses","yearswearingglasses",
                    "verbienglasses","eyeexamdate") %>% 
-  mutate("eyeexamdate" = as.Date(eyeexamdate, "%d/%m/%y")) %>% 
+  mutate(eyeexamdate = convertToDate(eyeexamdate)) %>% 
+  mutate(eyeexamdate = as.Date(eyeexamdate, "%d/%m/%y")) %>% 
   apply_labels(haswornglasses = c("Yes" = 1, "No" = 0),
                wearsglasses=c("Yes" = 1, "No" = 0),
                verbienglasses=c("Yes" = 1, "No" = 0),
@@ -713,7 +714,7 @@ mutate(across(c("av_s_rx_od","av_s_rx_oi","av_c_rx_od","av_c_rx_oi","age",
                eyeexamdate = "Date of eye exam") %>%
   mutate("schoolyear" = paste(2015,"-",2016)) 
 
-# fix eye exam date, numeric = 42298 >> 22,902 days from Stata's origin
+
 # write_xlsx(clean_16, file.path(path, "/Data/Clean data/VB 2015-2016.xlsx"))
 
 #Tabulations
@@ -793,14 +794,12 @@ appended <- clean_20 %>%
 # tab1(appended$gender)
 # tab1(appended$"schoolyear")
 
+
+
+
+
 # Audit
-# 2015-2016 eyeexamdate conversion
-# dates in the form of "42298"
-# Issue disappears when using read_excel command
-# But read_excel import file is faulty to mamipulate.
-
-
-
+# No differences 
 
 
 # write_xlsx(appended, file.path(path, "/Data/Clean data/VB 2015-2020.xlsx"))
