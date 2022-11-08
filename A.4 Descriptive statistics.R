@@ -1,6 +1,6 @@
 
 #=======================================================
-# This do-file produces basic descriptive tables and figures 
+# This script produces basic descriptive tables and figures 
 # regarding need and use of prescription glasses:
 #
 # - Table 1: number of students in the sample, by school year

@@ -799,7 +799,7 @@ appended <- clean_20 %>%
 
 
 # Audit
-# No differences 
+# No differences.
 
 
 # write_xlsx(appended, file.path(path, "/Data/Clean data/VB 2015-2020.xlsx"))
