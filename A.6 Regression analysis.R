@@ -25,11 +25,12 @@ enrlmntdta <- enrlmnt_dta %>%
          myopiaall = (myopia/enrolled)*100,
          wearsall = (wearsglasses/beneficiaries)*100,
          state = substr(schoolid,1,2),
-         ln_enrolled = log(enrolled)) %>% 
-  mutate(state = as.factor(state)) 
+         ln_enrolled = log(enrolled)) 
 
 enrlmntdta$level <- as.numeric(as.factor(enrlmntdta$nivel))
 
+
+# First Regression is done by restricting sample to u0<=1
 
 reg_enrlmntdta <- enrlmntdta %>% 
   filter(u0 <= 1)
@@ -40,6 +41,91 @@ reg_enrlmntdta[ , q10 := cut(u10,
                              breaks = quantile(u10, probs = seq(0,1,1/5),
                                                weights = "enrolled"),
                              labels = 1:5, right = FALSE)]
+
+# Need
+needall_1 <- dlply(reg_enrlmntdta,"level",
+                  function(df){
+                    felm(formula = needall ~ q10 | state, data = df,
+                         weight = df$enrolled,
+                         exactDOF=TRUE)
+                  })
+ldply(needall_1, coef)
+l_ply(needall_1, function(x) stargazer(x, type= "text"))
+
+# Myopia
+myopia_1 <- dlply(reg_enrlmntdta,"level",
+                function(df){
+                  felm(formula = myopiaall ~ q10 | state, data = df,
+                       weight = df$enrolled,
+                       exactDOF=TRUE)
+                })
+ldply(myopia_1, coef)
+l_ply(myopia_1, function(x) stargazer(x, type= "text"))
+
+
+# Wear
+
+wearsall_1 <- dlply(reg_enrlmntdta,"level",
+                  function(df){
+                    felm(formula = wearsall ~ q10 | state, data = df,
+                         weight = df$enrolled,
+                         exactDOF=TRUE)
+                  })
+ldply(wearsall_1, coef)
+l_ply(wearsall_1, function(x) stargazer(x, type= "text"))
+
+
+# Second Regression is done without restricting the sample
+
+reg_enrlmntdta_2 <- enrlmntdta
+
+setDT(reg_enrlmntdta_2)
+
+reg_enrlmntdta_2[ , q10 := cut(u10,
+                             breaks = quantile(u10, probs = seq(0,1,1/5),
+                                               weights = "enrolled"),
+                             labels = 1:5, right = FALSE)]
+
+# Need
+needall_2 <- dlply(reg_enrlmntdta_2,"level",
+                   function(df){
+                     felm(formula = needall ~ q10 | state, data = df,
+                          weight = df$enrolled,
+                          exactDOF=TRUE)
+                   })
+ldply(needall_2, coef)
+l_ply(needall_2, function(x) stargazer(x, type= "text"))
+
+# Myopia
+myopia_2 <- dlply(reg_enrlmntdta_2,"level",
+                  function(df){
+                    felm(formula = myopiaall ~ q10 | state, data = df,
+                         weight = df$enrolled,
+                         exactDOF=TRUE)
+                  })
+ldply(myopia_2, coef)
+l_ply(myopia_2, function(x) stargazer(x, type= "text"))
+
+
+# Wear
+
+wearsall_2 <- dlply(reg_enrlmntdta_2,"level",
+                    function(df){
+                      felm(formula = wearsall ~ q10 | state, data = df,
+                           weight = df$enrolled,
+                           exactDOF=TRUE)
+                    })
+ldply(wearsall_2, coef)
+l_ply(wearsall_2, function(x) stargazer(x, type= "text"))
+
+
+
+
+# 
+# 
+# feols(fml = wearsall ~ q10 | state , data = reg_enrlmntdta,
+#       weights = reg_enrlmntdta$enrolled)
+# 
 
 # na.rm - T, weights = "enrolled"))
 
@@ -81,11 +167,26 @@ reg_enrlmntdta[ , q10 := cut(u10,
 
 # xtile command
 
+
+
+# First Regression is done by restricting sample to u0<=1
+
 outcomes = c("needall", "myopiall","wearsall")
 
-models <- dlply(reg_enrlmntdta,"level",
+
+reg_enrlmntdta_2 <- enrlmntdta 
+
+setDT(reg_enrlmntdta_2)
+
+reg_enrlmntdta_2[ , q10 := cut(u10,
+                             breaks = quantile(u10, probs = seq(0,1,1/5),
+                                               weights = "enrolled"),
+                             labels = 1:5, right = FALSE)]
+
+
+models <- dlply(reg_enrlmntdta_2,"level",
                 function(df){
-                  felm(formula =  wearsall ~ q10 | state, data = df,
+                  felm(formula = wearsall ~ q10 | state, data = df,
                        weight = df$enrolled)
                 })
 
@@ -94,15 +195,18 @@ ldply(models, coef)
 l_ply(models, stargazer(models, type= "text"), .print = T)
 
 
+
+
 models <- dlply(reg_enrlmntdta,"level",
                 function(df){
-                  felm(formula = myopiaall  ~ q10 | state , data = df,
-                       weight = df$enrolled)
+                  feols(fml = myopiaall ~ q10 | state , data = df,
+                       weights = df$enrolled)
                 })
 
-ldply(models, coef)
+# ldply(models, coef)
 
 l_ply(models, stargazer(models, type= "text"), .print = T)
+
 
 
 # reg_func <- function(df){
@@ -112,7 +216,6 @@ l_ply(models, stargazer(models, type= "text"), .print = T)
 # by(models, models$level, reg_func)
 
 
-# First Regression is done by restricting sample to u0<=1
 
 # by_level <- group_by(reg_enrlmntdta, level)
 # 

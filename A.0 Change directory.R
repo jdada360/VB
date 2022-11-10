@@ -9,6 +9,7 @@ pacman::p_load(stataXml,lubridate, shape,openxlsx,tidyverse,imputeTS,dplyr,
                questionr, panelr,data.table, remotes, janitor, 
                readxl, PropCIs, binom, mgsub,googleway,ddpcr, purrr, tidyr,
                geosphere, swfscMisc, statar, cutr, Hmisc, lfe, broom, stargazer,
-               kableExtra, gtsummary, survival, plyr, nlme)
+               kableExtra, gtsummary, survival, plyr, nlme,
+               plm, fixest)
 
 # To see log of tidyverse functions, also load tidylog
