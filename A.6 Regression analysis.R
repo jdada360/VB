@@ -1,5 +1,5 @@
 #=======================================================
-# This do-file explores the correlates of the need of prescription glasses. 
+# This script explores the correlates of the need of prescription glasses. 
 # We look at differences across quintiles of population density. Population 
 # density is proxied with the number of schools of the same level (primaria, 
 # secundaria) in a 10-km radius. We include and exclude cases with many schools
@@ -31,7 +31,7 @@ enrlmntdta <- enrlmnt_dta %>%
 enrlmntdta$level <- as.numeric(as.factor(enrlmntdta$nivel))
 
 
-# First Regression is done by restricting sample to u0<=1 & Level = 1
+# First Regression is done by restricting sample to u0<=1
 
 reg_enrlmntdta <- enrlmntdta %>% 
   filter(u0 <= 1 & level == 1) %>% 
@@ -48,8 +48,6 @@ reg_enrlmntdta_2 <- enrlmntdta %>%
 
 reg_list = list(reg_enrlmntdta, reg_enrlmntdta_2)
 
-
-# Need
 
 reg_results = list()
 
@@ -68,6 +66,40 @@ lapply(reg_list, function(df){
               weight = df$enrolled)
     stargazer(z, type = "text")
     })
+
+
+
+# 2
+
+# Second Regression is done without restricting the sample
+
+reg_enrlmntdta_3 <- enrlmntdta %>% 
+  filter(level == 1) %>% 
+  mutate(q10 =  xtile(u10, wt = enrolled, n = 5))
+
+
+
+reg_enrlmntdta_4 <- enrlmntdta %>% 
+  filter(level == 2) %>% 
+  mutate(q10 =  xtile(u10, wt = enrolled, n = 5))
+
+reg_list_2 = list(reg_enrlmntdta_3, reg_enrlmntdta_4)
+
+
+
+lapply(reg_list_2, function(df){
+  x <- felm(formula = needall ~ factor(q10) | factor(state) ,  data = df,
+            weights = df$enrolled)
+  stargazer(x, type = "text")
+  
+  y <- felm(formula = myopiaall ~ factor(q10) | factor(state), data = df,
+            weights = df$enrolled)
+  stargazer(y, type = "text")
+  
+  z <- felm(formula = wearsall ~ factor(q10) | factor(state), data = df,
+            weight = df$enrolled)
+  stargazer(z, type = "text")
+})
 
 
 # needall_1 <- dlply(reg_enrlmntdta,"level",
@@ -101,37 +133,7 @@ lapply(reg_list, function(df){
 # l_ply(wearsall_1, function(x) stargazer(x, type= "text"))
 
 
-# Second Regression is done without restricting the sample
 
-reg_enrlmntdta_3 <- enrlmntdta %>% 
-  filter(level == 1) %>% 
-  mutate(q10 =  xtile(u10, wt = enrolled, n = 5))
-
-# table(reg_enrlmntdta$q10, reg_enrlmntdta$level)
-# 
-# tab1(reg_enrlmntdta_2$q10)
-
-reg_enrlmntdta_4 <- enrlmntdta %>% 
-  filter(level == 2) %>% 
-  mutate(q10 =  xtile(u10, wt = enrolled, n = 5))
-
-reg_list_2 = list(reg_enrlmntdta_3, reg_enrlmntdta_4)
-
-
-
-lapply(reg_list_2, function(df){
-  x <- felm(formula = needall ~ factor(q10) | factor(state) ,  data = df,
-            weights = df$enrolled)
-  stargazer(x, type = "text")
-  
-  y <- felm(formula = myopiaall ~ factor(q10) | factor(state), data = df,
-            weights = df$enrolled)
-  stargazer(y, type = "text")
-  
-  z <- felm(formula = wearsall ~ factor(q10) | factor(state), data = df,
-            weight = df$enrolled)
-  stargazer(z, type = "text")
-})
 
 
 
@@ -209,53 +211,44 @@ lapply(reg_list_2, function(df){
 # enrolled is weighted
 
 
-# Pablo will give me the go ahead.
 
-# the second version is done without filtering u10 <= 0
-
-# Need to regress needall, myopiall, wearsall
-
-# xtile command
-
-
-
-# First Regression is done by restricting sample to u0<=1
-
-outcomes = c("needall", "myopiall","wearsall")
-
-
-reg_enrlmntdta_2 <- enrlmntdta 
-
-setDT(reg_enrlmntdta_2)
-
-reg_enrlmntdta_2[ , q10 := cut(u10,
-                             breaks = quantile(u10, probs = seq(0,1,1/5),
-                                               weights = "enrolled"),
-                             labels = 1:5, right = FALSE)]
-
-
-models <- dlply(reg_enrlmntdta_2,"level",
-                function(df){
-                  felm(formula = wearsall ~ q10 | state, data = df,
-                       weight = df$enrolled)
-                })
-
-ldply(models, coef)
-
-l_ply(models, stargazer(models, type= "text"), .print = T)
-
-
-
-
-models <- dlply(reg_enrlmntdta,"level",
-                function(df){
-                  feols(fml = myopiaall ~ q10 | state , data = df,
-                       weights = df$enrolled)
-                })
-
+# # First Regression is done by restricting sample to u0<=1
+# 
+# outcomes = c("needall", "myopiall","wearsall")
+# 
+# 
+# reg_enrlmntdta_2 <- enrlmntdta 
+# 
+# setDT(reg_enrlmntdta_2)
+# 
+# reg_enrlmntdta_2[ , q10 := cut(u10,
+#                              breaks = quantile(u10, probs = seq(0,1,1/5),
+#                                                weights = "enrolled"),
+#                              labels = 1:5, right = FALSE)]
+# 
+# 
+# models <- dlply(reg_enrlmntdta_2,"level",
+#                 function(df){
+#                   felm(formula = wearsall ~ q10 | state, data = df,
+#                        weight = df$enrolled)
+#                 })
+# 
 # ldply(models, coef)
-
-l_ply(models, stargazer(models, type= "text"), .print = T)
+# 
+# l_ply(models, stargazer(models, type= "text"), .print = T)
+# 
+# 
+# 
+# 
+# models <- dlply(reg_enrlmntdta,"level",
+#                 function(df){
+#                   feols(fml = myopiaall ~ q10 | state , data = df,
+#                        weights = df$enrolled)
+#                 })
+# 
+# # ldply(models, coef)
+# 
+# l_ply(models, stargazer(models, type= "text"), .print = T)
 
 
 
@@ -281,13 +274,7 @@ l_ply(models, stargazer(models, type= "text"), .print = T)
 # reg_1_wearsall <- do(by_level,
 #                tidy(felm(formula = wearsall ~ q10 | state, data = reg_enrlmntdta, 
 #                          weight = reg_enrlmntdta$enrolled)))
-# 
-
-
-
-
-# I find higher density is correlated with higher need and myopia.
-
+#
 
 # # Second Regression is done by not restricting sample
 # 
