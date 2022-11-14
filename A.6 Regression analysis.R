@@ -49,25 +49,29 @@ reg_enrlmntdta_2 <- enrlmntdta %>%
 reg_list = list(reg_enrlmntdta, reg_enrlmntdta_2)
 
 
-reg_results = list()
+reg_results = as.data.frame()
 
 # We got it!!!!
 
 lapply(reg_list, function(df){
    x <- felm(formula = needall ~ factor(q10) | factor(state) ,  data = df,
          weights = df$enrolled)
-    stargazer(x, type = "text")
+   
+    # stargazer(x, type = "text")
     
+     
+    x$N
+    summary(x)$coefficients
+  
     y <- felm(formula = myopiaall ~ factor(q10) | factor(state), data = df,
               weights = df$enrolled)
-    stargazer(y, type = "text")
+    
+    # stargazer(y, type = "text")
     
     z <- felm(formula = wearsall ~ factor(q10) | factor(state), data = df,
               weight = df$enrolled)
-    stargazer(z, type = "text")
+    # stargazer(z, type = "text")
     })
-
-
 
 # 2
 
@@ -78,19 +82,17 @@ reg_enrlmntdta_3 <- enrlmntdta %>%
   mutate(q10 =  xtile(u10, wt = enrolled, n = 5))
 
 
-
 reg_enrlmntdta_4 <- enrlmntdta %>% 
   filter(level == 2) %>% 
   mutate(q10 =  xtile(u10, wt = enrolled, n = 5))
 
 reg_list_2 = list(reg_enrlmntdta_3, reg_enrlmntdta_4)
 
-
-
 lapply(reg_list_2, function(df){
   x <- felm(formula = needall ~ factor(q10) | factor(state) ,  data = df,
             weights = df$enrolled)
-  stargazer(x, type = "text")
+  # stargazer(x, type = "text")
+
   
   y <- felm(formula = myopiaall ~ factor(q10) | factor(state), data = df,
             weights = df$enrolled)
@@ -101,205 +103,31 @@ lapply(reg_list_2, function(df){
   stargazer(z, type = "text")
 })
 
+detach(package:plyr)
 
-# needall_1 <- dlply(reg_enrlmntdta,"level",
-#                   function(df){
-#                     felm(formula = needall ~ factor(q10) | factor(state) ,  data = df,
-#                          weights = df$enrolled)
-#                   })
-# 
-# l_ply(needall_1, function(x) summary(x, robust = T), .print = T)
-# 
-# # Myopia
-# myopia_1 <- dlply(reg_enrlmntdta,"level",
-#                 function(df){
-#                   felm(formula = myopiaall ~ q10 | state, data = df,
-#                        weight = df$enrolled,
-#                        exactDOF=TRUE)
-#                 })
-# ldply(myopia_1, coef)
-# l_ply(myopia_1, function(x) stargazer(x, type= "text"))
-# 
-# 
-# # Wear
-# 
-# wearsall_1 <- dlply(reg_enrlmntdta,"level",
-#                   function(df){
-#                     felm(formula = wearsall ~ q10 | state, data = df,
-#                          weight = df$enrolled,
-#                          exactDOF=TRUE)
-#                   })
-# ldply(wearsall_1, coef)
-# l_ply(wearsall_1, function(x) stargazer(x, type= "text"))
+reg_lists<- bind_rows(reg_list, reg_list_2) %>% 
+  ungroup() %>%
+  group_by(nivel, q10) %>% 
+  mutate(n = 1) %>% 
+  summarise(schools = sum(n),
+            enrolled = sum(enrolled),
+         across(c("u10", "needall", "myopiaall", "wearsall"),
+               ~mean(.x, na.rm = F))) %>% 
+  distinct(q10, nivel, .keep_all = T) %>% 
+  ungroup() %>% 
+  dplyr::select(nivel, q10, u10, enrolled, needall,
+                myopiaall, wearsall) %>% 
+  mutate_if(is.numeric, ~round(.x, 0))
+  
+# reg_list_2 <- bind_rows(reg_list_2)
 
-
-
-
-
-
-
-# Need
-# needall_2 <- dlply(reg_enrlmntdta_2,"level",
-#                    function(df){
-#                      felm(formula = needall ~ q10 | state, data = df,
-#                           weight = df$enrolled,
-#                           exactDOF=TRUE)
-#                    })
-# ldply(needall_2, coef)
-# l_ply(needall_2, function(x) stargazer(x, type= "text"))
-# 
-# # Myopia
-# myopia_2 <- dlply(reg_enrlmntdta_2,"level",
-#                   function(df){
-#                     felm(formula = myopiaall ~ q10 | state, data = df,
-#                          weight = df$enrolled,
-#                          exactDOF=TRUE)
-#                   })
-# ldply(myopia_2, coef)
-# l_ply(myopia_2, function(x) stargazer(x, type= "text"))
-# 
-# 
-# # Wear
-# 
-# wearsall_2 <- dlply(reg_enrlmntdta_2,"level",
-#                     function(df){
-#                       felm(formula = wearsall ~ q10 | state, data = df,
-#                            weight = df$enrolled,
-#                            exactDOF=TRUE)
-#                     })
-# ldply(wearsall_2, coef)
-# l_ply(wearsall_2, function(x) stargazer(x, type= "text"))
-
-
-
-
-# 
-# 
-# feols(fml = wearsall ~ q10 | state , data = reg_enrlmntdta,
-#       weights = reg_enrlmntdta$enrolled)
-# 
-
-# na.rm - T, weights = "enrolled"))
-
-# L28 - leaves schools that are isolated, i.e. no other schools that
-# are nearby
-
-# L31 - what is the _ for throughout
-# A - create quintiles of count of schools in a 10 kilometer radius
-# Seperately for elementary or middle schools 
-# Level = 1 = primary school 
-# quintiles of u10 weighted by enrollement 
-# quntiles of the numbers of schools in a 10 km radius, weighted by enrollment
-
-
-
-# nq(5) = number of quantiles
-
-# areg - absorbing variable (consider the fixed effects but dont report tem)
-# is state or the fixed effects defined for each of the states
-# i.q10 - creates dummy variables for each of the levels of q10
-
-# Need of glasses grow with density
-# 62% more likely to need glasses if you attend a school in a low density area vs
-# high area
-
-# Parmby command - executes the quoted command with certain options
-# do it by nivel, es(N, r2) <- include number of observations and r2
-# change to condfidence level 99.
-# merge with the first round of regression.
-# average number of schools in each quintile. 
-# enrolled is weighted
-
-
-
-# # First Regression is done by restricting sample to u0<=1
-# 
-# outcomes = c("needall", "myopiall","wearsall")
-# 
-# 
-# reg_enrlmntdta_2 <- enrlmntdta 
-# 
-# setDT(reg_enrlmntdta_2)
-# 
-# reg_enrlmntdta_2[ , q10 := cut(u10,
-#                              breaks = quantile(u10, probs = seq(0,1,1/5),
-#                                                weights = "enrolled"),
-#                              labels = 1:5, right = FALSE)]
-# 
-# 
-# models <- dlply(reg_enrlmntdta_2,"level",
-#                 function(df){
-#                   felm(formula = wearsall ~ q10 | state, data = df,
-#                        weight = df$enrolled)
-#                 })
-# 
-# ldply(models, coef)
-# 
-# l_ply(models, stargazer(models, type= "text"), .print = T)
-# 
-# 
-# 
-# 
-# models <- dlply(reg_enrlmntdta,"level",
-#                 function(df){
-#                   feols(fml = myopiaall ~ q10 | state , data = df,
-#                        weights = df$enrolled)
-#                 })
-# 
-# # ldply(models, coef)
-# 
-# l_ply(models, stargazer(models, type= "text"), .print = T)
-
-
-
-# reg_func <- function(df){
-#   summary(felm(formula = needall ~ q10 | state, data = df,
-#                   weight = df$enrolled))}
-# 
-# by(models, models$level, reg_func)
-
-
-
-# by_level <- group_by(reg_enrlmntdta, level)
-# 
-# reg_1_needall <- do(by_level,
-#    tidy(felm(formula = needall ~ q10 | state, data = reg_enrlmntdta, 
-#              weights = reg_enrlmntdta$enrolled)))
-# 
-# 
-# reg_1_myopiall <- do(by_level,
-#              tidy(felm(formula = myopiaall ~ q10 | state, data = reg_enrlmntdta, 
-#                        weight = reg_enrlmntdta$enrolled)))
-# 
-# reg_1_wearsall <- do(by_level,
-#                tidy(felm(formula = wearsall ~ q10 | state, data = reg_enrlmntdta, 
-#                          weight = reg_enrlmntdta$enrolled)))
-#
-
-# # Second Regression is done by not restricting sample
-# 
-# reg_enrlmntdta_2 <- enrlmntdta 
+# reg_lists <- bind_rows(reg_list, reg_list_2) %>% 
+#   group_by(level, q10) %>%
+#   summarize(sm = sum(enrolled))
 #   
-# setDT(reg_enrlmntdta_2)
-# 
-# reg_enrlmntdta_2[ , q10 := cut(u10,
-#                              breaks = quantile(u10, probs = seq(0,1,1/5),
-#                                                weights = "enrolled"),
-#                              labels = 1:5, right = FALSE)]
-# 
-#   
-# by_country <- group_by(reg_enrlmntdta_2, level)
-# 
-# 
-# reg_1_needall <- do(by_country,
-#                     tidy(felm(formula = needall ~ q10 | state, data = reg_enrlmntdta_2, 
-#                               weight = reg_enrlmntdta_2$enrolled)))
-# 
-# reg_1_myopiall <- do(by_country,
-#                      tidy(felm(formula = myopiaall ~ q10 | state, data = reg_enrlmntdta_2, 
-#                                weight = reg_enrlmntdta_2$enrolled)))
-# 
-# reg_1_wearsall <- do(by_country,
-#                      tidy(felm(formula = wearsall ~ q10 | state, data = reg_enrlmntdta_2, 
-#                                weight = reg_enrlmntdta_2$enrolled)))
+
+
+# Questions
+
+# L62 - Schools = enrolled, unsure what summary 
 
