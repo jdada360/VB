@@ -46,32 +46,36 @@ reg_enrlmntdta_2 <- enrlmntdta %>%
   filter(u0 <= 1 & level == 2) %>% 
   mutate(q10 =  xtile(u10, wt = enrolled, n = 5))
 
+
+
 reg_list = list(reg_enrlmntdta, reg_enrlmntdta_2)
 
+outcomes = c("needall","myopiaall","wearsall")
 
-reg_results = as.data.frame()
-
-# We got it!!!!
-
-lapply(reg_list, function(df){
-   x <- felm(formula = needall ~ factor(q10) | factor(state) ,  data = df,
-         weights = df$enrolled)
+output <- lapply(seq_along(reg_list), function(df){
+   x = felm(formula = needall ~ factor(q10) | factor(state),  data = reg_list[[df]],
+         weights = reg_list[[df]][["enrolled"]])
    
-    # stargazer(x, type = "text")
-    
-     
-    x$N
-    summary(x)$coefficients
-  
-    y <- felm(formula = myopiaall ~ factor(q10) | factor(state), data = df,
-              weights = df$enrolled)
-    
-    # stargazer(y, type = "text")
-    
-    z <- felm(formula = wearsall ~ factor(q10) | factor(state), data = df,
-              weight = df$enrolled)
-    # stargazer(z, type = "text")
-    })
+   x <-  bind_cols(tidy(x)[1:3], nobs(x),
+                   level = df)
+   
+   y = felm(formula = myopiaall ~ factor(q10) | factor(state), data = reg_list[[df]],
+            weights = reg_list[[df]][["enrolled"]])
+   
+   y =  bind_cols(tidy(y)[1:3], nobs(y),
+                  level = df)
+   
+   z = felm(formula = wearsall ~ factor(q10) | factor(state), data = reg_list[[df]],
+            weights = reg_list[[df]][["enrolled"]])
+   
+   z =  bind_cols(tidy(z)[1:3], nobs(z),
+                  level = df)
+   
+   list(x, y, z)})
+   
+output_1 <- bind_rows(output)
+
+# output_1 <- do.call(rbind, output)
 
 # 2
 
