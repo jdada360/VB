@@ -60,7 +60,7 @@ reg_list = list(reg_enrlmntdta, reg_enrlmntdta_2)
 # by(reg_list, )
 
 
-output <- lapply(seq_along(reg_list), 
+output <- lapply(seq_along(reg_list))
                  
 linear_map <- function(df){
    x <- felm(formula = needall ~ factor(q10) | factor(state),  data = reg_list[[df]],
@@ -127,9 +127,9 @@ output_1 <- bind_rows(output) %>%
 #   stargazer(z, type = "text")
 # })
 
-detach(package:plyr)
+# detach(package:plyr)
 
-reg_lists<- bind_rows(reg_list, reg_list_2) %>% 
+reg_lists <- bind_rows(reg_list, reg_list_2) %>% 
   ungroup() %>%
   group_by(nivel, q10) %>% 
   mutate(n = 1) %>% 
@@ -153,19 +153,41 @@ reg_lists<- bind_rows(reg_list, reg_list_2) %>%
 
 # Method 2
 
-# library(plyr)
-# 
-# output_1 <- dlply(reg_enrlmntdta, "level", function(df){
-#  felm(formula = needall ~ factor(q10) | factor(state),  data = df,
-#                   weights = df$enrolled)
-#   
-#   felm(formula = myopiaall ~ factor(q10) | factor(state),  data = df,
-#        weights = df$enrolled)
-#   felm(formula = wearsall ~ factor(q10) | factor(state),  data = df,
-#        weights = df$enrolled)
-#   
-# })
-# 
+library(plyr)
+
+need_all = list()
+myopia_all = list()
+wears_all = list()
+
+output_2 = list()
+outcomes = c("needall","myopiaall","wearsall")
+
+lapply(outcomes, function(i){
+  reg <- reg_enrlmntdta %>% 
+  group_by(level) %>% 
+  do(model = tidy(felm(formula = i ~ factor(q10) | factor(state),  data = .,
+                  weights = .$enrolled)))
+  output_2[i] = reg})
+
+
+
+
+# Method 2 
+output_1 <- dlply(reg_enrlmntdta, "level", function(df){
+  
+ x <- felm(formula = needall ~ factor(q10) | factor(state),  data = df,
+                  weights = df$enrolled)
+ 
+  x = tidy(x)
+  append(need_all, x)
+
+  felm(formula = myopiaall ~ factor(q10) | factor(state),  data = df,
+       weights = df$enrolled)
+  felm(formula = wearsall ~ factor(q10) | factor(state),  data = df,
+       weights = df$enrolled)
+
+})
+
 # ldply(output_1, coef)
 #  l_ply(output_1, summary, .print = T)
 
