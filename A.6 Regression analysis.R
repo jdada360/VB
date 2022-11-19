@@ -38,62 +38,114 @@ reg_enrlmntdta <- enrlmntdta %>%
   filter(u0 <= 1) %>% 
   group_by(level) %>% 
   mutate(q10 = xtile(u10, n = 5, wt = enrolled)) %>% 
-  ungroup() 
-
-reg_enrlmntdta_2 <- enrlmntdta %>% 
-  ungroup() %>% 
-  group_by(level) %>% 
-  mutate(q10 = xtile(u10, n = 5, wt = enrolled)) %>% 
-  ungroup()
-
-# reg_enrlmntdta_2 <- enrlmntdta %>%
-#   ungroup() %>% 
-#   filter(u0 <= 1 & level == 2) %>% 
-#   mutate(q10 =  xtile(u10, wt = enrolled, n = 5),
-#          q10 = as.factor(q10))
+  group_split()
 
 
-reg_list = list(reg_enrlmntdta, reg_enrlmntdta_2)
-
-# purrr::map(reg_list, ~.x %>% group_by(level) %>% 
-#              
-# by(reg_list, )
-
-
-output <- lapply(seq_along(reg_list))
-                 
-linear_map <- function(df){
-   x <- felm(formula = needall ~ factor(q10) | factor(state),  data = reg_list[[df]],
-             weights = reg_list[[df]][["enrolled"]])
-
-   x <-  bind_cols(tidy(x)[1:3], nobs(x), summary(x)$r.squared, level = df,
-                   outcome = "needall")
-
-   y <- felm(formula = myopiaall ~ factor(q10) | factor(state), data = reg_list[[df]],
+output <- lapply(seq_along(reg_enrlmntdta), function(df){
+  x <- felm(formula = needall ~ factor(q10) | factor(state),  data = reg_list[[df]],
             weights = reg_list[[df]][["enrolled"]])
-
-   y <- bind_cols(tidy(y)[1:3], nobs(y), summary(y)$r.squared,
-                  level = df, outcome = "myopiaall")
-
-   z <- felm(formula = wearsall ~ factor(q10) | factor(state), data = reg_list[[df]],
+  
+  x <-  bind_cols(tidy(x)[1:3], nobs(x), summary(x)$r.squared, level = df,
+                  outcome = "needall")
+  
+  y <- felm(formula = myopiaall ~ factor(q10) | factor(state), data = reg_list[[df]],
             weights = reg_list[[df]][["enrolled"]])
-
-   z <-  bind_cols(tidy(z)[1:3], nobs(z), summary(z)$r.squared,
+  
+  y <- bind_cols(tidy(y)[1:3], nobs(y), summary(y)$r.squared,
+                 level = df, outcome = "myopiaall")
+  
+  z <- felm(formula = wearsall ~ factor(q10) | factor(state), data = reg_list[[df]],
+            weights = reg_list[[df]][["enrolled"]])
+  
+  z <-  bind_cols(tidy(z)[1:3], nobs(z), summary(z)$r.squared,
                   level = df,
                   outcome = "wearsall")
-
-   list(x, y, z)}
-
-m <- lapply(split())
-
+  
+  list(x, y, z)})
 
 output_1 <- bind_rows(output) %>%
   mutate(nivel = case_when(
     level == 1 ~ "PRIMARIA",
     TRUE ~ "SECONDARIA")) %>%
-  rename("N" = 4,
-         "r2" = 5) %>%
+  setnames(., old = c("...4","...5"),
+           new = c("N","r2")) %>% 
   dplyr::select(level, nivel, outcome, term, estimate, std.error, N, r2)
+
+
+need_reg_1 <- output_1 %>% 
+  filter(outcome == "needall")
+
+myopia_reg_1 <- output_1 %>%
+  filter(outcome == "myopiaall")
+
+wear_reg_1 <- output_1 %>% 
+  filter(outcome == "wearsall")
+
+
+
+# Second Regression is done without restricting sample to u0<=1
+
+reg_enrlmntdta_2 <- enrlmntdta %>% 
+  ungroup() %>% 
+  group_by(level) %>% 
+  mutate(q10 = xtile(u10, n = 5, wt = enrolled)) %>% 
+  group_split()
+
+
+output_now <- lapply(seq_along(reg_enrlmntdta_2), function(df){
+  a <- felm(formula = needall ~ factor(q10) | factor(state),  data = reg_list[[df]],
+            weights = reg_list[[df]][["enrolled"]])
+  
+  a <-  bind_cols(tidy(a)[1:3], nobs(a), summary(a)$r.squared, level = df,
+                  outcome = "needall")
+  
+  b <- felm(formula = myopiaall ~ factor(q10) | factor(state), data = reg_list[[df]],
+            weights = reg_list[[df]][["enrolled"]])
+  
+  b <- bind_cols(tidy(b)[1:3], nobs(b), summary(b)$r.squared,
+                 level = df, outcome = "myopiaall")
+  
+  c <- felm(formula = wearsall ~ factor(q10) | factor(state), data = reg_list[[df]],
+            weights = reg_list[[df]][["enrolled"]])
+  
+  c <-  bind_cols(tidy(c)[1:3], nobs(c), summary(c)$r.squared,
+                  level = df,
+                  outcome = "wearsall")
+  
+  list(a, b, c)})
+
+output_2 <- bind_rows(output_now) %>%
+  mutate(nivel = case_when(
+    level == 1 ~ "PRIMARIA",
+    TRUE ~ "SECONDARIA")) %>%
+  setnames(., old = c("...4","...5"),
+           new = c("N","r2")) %>% 
+  dplyr::select(level, nivel, outcome, term, estimate, std.error, N, r2)
+
+
+need_reg_2 <- output_2 %>% 
+  filter(outcome == "needall") %>% 
+  bind_rows(need_reg_1)
+
+myopia_reg_2 <- output_2 %>%
+  filter(outcome == "myopiaall") %>% 
+  bind_rows(myopia_reg_2)
+
+wear_reg_2 <- output_2 %>% 
+  filter(outcome == "wearsall") %>% 
+  bind_rows(wear_reg_2)
+
+sheet_names = list('Sheet1' = need_reg_2,
+                   'Sheet2' = myopia_reg_2,
+                   'Sheet3' = wear_reg_2)
+
+write.xlsx(sheet_names, file = 'Regression Results.xlsx', append = TRUE)
+
+
+# Second regression results look identical to the first one
+
+# Must fix
+  
 
 # 2
 
@@ -172,7 +224,8 @@ lapply(outcomes, function(i){
 
 
 
-# Method 2 
+# Method 3
+
 output_1 <- dlply(reg_enrlmntdta, "level", function(df){
   
  x <- felm(formula = needall ~ factor(q10) | factor(state),  data = df,
