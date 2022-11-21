@@ -73,9 +73,8 @@ SEP_clean <- bind_rows(SEP_clean) %>%
 
 # N =  3,504,774
 
-#tab1(SEP_clean$"schoolyear")
-#tab1(SEP_clean$grade)
-#tab1(SEP_clean$nivel)
+table(SEP_clean$schoolyear)
+table(SEP_clean$schoolyear)
 
 # Audit
 # No differences.

@@ -561,6 +561,7 @@ VB_1516 <- read.xlsx(file.path(path, "/Data/Raw data/CICLO 2015-2016.xlsx"))
 clean_16 <- VB_1516 %>%
   tibble() %>%
   janitor::clean_names() %>%
+  ungroup() %>% 
   mutate(
     "cat" = case_when(
     (!is.na(ha_utilizado_lentes_anteriormente)
@@ -598,7 +599,7 @@ clean_16 <- VB_1516 %>%
                   "hace_cuanto_tiempo_usa_lentes", "sexo",
                   "optometrista","usa_lentes_actualmente","sus_lentes_son_de_vbpam"),
                 suppressWarnings(trimws)),
-    "cat" = as.numeric(cat)) %>% 
+    cat = as.numeric(cat)) %>% 
   mutate(ha_utilizado_lentes_anteriormente
          = ifelse((cat == 2 | cat == 4), hace_cuanto_tiempo_usa_lentes,
                   ifelse(cat == 3, optometrista, ha_utilizado_lentes_anteriormente)),
@@ -626,22 +627,27 @@ clean_16 <- VB_1516 %>%
          wearsglasses = ifelse(
            grepl("SI",usa_lentes_actualmente),1,0),
          verbienglasses = ifelse(
-           grepl("SI",sus_lentes_son_de_vbpam),1,0),
-         hace_cuanto_tiempo_usa_lentes = suppressWarnings(
-           substr(hace_cuanto_tiempo_usa_lentes,1,
-                         (StrPos(hace_cuanto_tiempo_usa_lentes, "A")-1))),
-           hace_cuanto_tiempo_usa_lentes = case_when(
-             StrPos(hace_cuanto_tiempo_usa_lentes, "1/2") == 1 ~ 0.5,
-             StrPos(hace_cuanto_tiempo_usa_lentes, "0") == 1 ~ 0.5)) %>% 
-  mutate("studentexcluded" = ifelse(cat == 5,1,0)) %>% 
+           grepl("SI",sus_lentes_son_de_vbpam),1,0)) %>% 
+  mutate(hace_cuanto_tiempo_usa_lentes = str_replace(hace_cuanto_tiempo_usa_lentes,
+                                                         "AÑ0S","")
+         # hace_cuanto_tiempo_usa_lentes = suppressWarnings(
+         #   substr(hace_cuanto_tiempo_usa_lentes,1,
+         #                 (StrPos(hace_cuanto_tiempo_usa_lentes, "A")-1)))
+         ) %>% 
+  mutate(hace_cuanto_tiempo_usa_lentes = case_when(
+             grepl("1/2", hace_cuanto_tiempo_usa_lentes)  ~ 0.5,
+             grepl("0", hace_cuanto_tiempo_usa_lentes) ~ 0,
+             TRUE ~ 0)) %>% 
+  mutate(studentexcluded = ifelse(cat == 5,1,0)) %>% 
   setnames(., old =c("clave","turno","grado", "grupo",
                      "nombre_s", "ap_paterno","ap_materno","edad","sexo", "fecha_de_atencion"),
            new = c("schoolid", "shift", "grade", "group",
                    "givenname","paternallastname","maternallastname","age",
                    "gender","eyeexamdate"))  %>% 
+
   group_by(schoolid) %>% 
-  mutate("schoolexcluded" = max(studentexcluded)) %>%
-  filter(schoolexcluded != 1) %>% 
+  mutate_at("studentexcluded", sum) %>% 
+  filter(studentexcluded == 0) %>% 
   ungroup() %>% 
   dplyr::select("schoolid", "shift", "grade", "group","cat",
                 "givenname","paternallastname","maternallastname","age",
@@ -713,6 +719,10 @@ mutate(across(c("av_s_rx_od","av_s_rx_oi","av_c_rx_od","av_c_rx_oi","age",
                verbienglasses = "Student's current glasses are from Ver Bien",
                eyeexamdate = "Date of eye exam") %>%
   mutate("schoolyear" = paste(2015,"-",2016)) 
+
+
+# Fix years wearing glasses column 
+# Remove "anos" and extract numbers.
 
 
 # write_xlsx(clean_16, file.path(path, "/Data/Clean data/VB 2015-2016.xlsx"))
