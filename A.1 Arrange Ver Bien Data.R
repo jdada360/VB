@@ -69,10 +69,10 @@ clean_20 <- VB_1920 %>%
                   "cuántotiempohausadolentesa","cuántotiempohausadolentesm",
                   "hautilizadoantes","suslentessondeverbien"),
                 trimws),
-         "avsrxod" = suppressWarnings(as.numeric(avsrxod)),
-         "avsrxoi" = suppressWarnings(as.numeric(avsrxoi)),
-         "avcrxod" = suppressWarnings(as.numeric(avcrxod)),
-         "avcrxoi" = suppressWarnings(as.numeric(avcrxoi)),
+         avsrxod = suppressWarnings(as.numeric(avsrxod)),
+         avsrxoi = suppressWarnings(as.numeric(avsrxoi)),
+         avcrxod = suppressWarnings(as.numeric(avcrxod)),
+         avcrxoi = suppressWarnings(as.numeric(avcrxoi)),
          haswornglasses = ifelse(hautilizadoantes == "Sí",1,0),
          wearsglasses = ifelse(usaslentesactualmente == "Sí",1,0),
          verbienglasses = ifelse(suslentessondeverbien == "Sí",1,0),
@@ -90,13 +90,12 @@ clean_20 <- VB_1920 %>%
                 "vadle_withoutrx","vadre_withrx","vadle_withrx","haswornglasses",
                 "wearsglasses","verbienglasses","yearswearingglasses","monthswearingglasses",
                 "eyeexamdate", starts_with("diag"),ends_with("glasses")) %>% 
-  mutate(
-         "gender" =
+  mutate(gender = trimws(toupper(gender))) %>% 
+  mutate(gender =
            case_when(
-             gender == "Masculino" ~ "Male",
-             gender == "Femenino" ~ "Female",
+             grepl("MASC", gender) ~ "Male",
+             grepl("FEM", gender) ~ "Female",
              TRUE ~ "Error"),
-         gender = factor(gender, levels = c("Male","Female","Error")),
          diagre = case_when(
            (grepl("ASTIGMATISMO HIPERMETROPICO COMPUESTO",diagnósticod)) ~ "AHC",
            (grepl("ASTIGMATISMO HIPERMETROPICO SIMPLE",diagnósticod)) ~ "AHS",
@@ -119,12 +118,14 @@ clean_20 <- VB_1920 %>%
            diagnósticoi == "MIOPIA" ~ "M",
            TRUE ~ diagnósticoi)) %>%
   dplyr::select(-c("diagnósticoi","diagnósticod")) %>%
-  mutate(shift = substring(shift,1,10),
+  mutate(eyeexamdate = trimws(as.character(eyeexamdate))) %>% 
+  # mutate(eyeexamdate = as.Date(trimws(eyeexamdate), format = "%d/%m/%y")) %>% 
+  mutate(
+         shift = substring(shift,1,10),
          across(ends_with("name"),toupper),
          givenname = substr(givenname,1,50),
          paternallastname=substr(paternallastname,1,50),
          maternallastname=substr(maternallastname,1,50)) %>%
-  mutate("eyeexamdate" = as.Date(eyeexamdate, "%d/%m/%y")) %>% 
   dplyr::select("schoolid","shift","grade","group","givenname",
                 "paternallastname","maternallastname",
                 "age","gender","diagre","diagle","vadre_withoutrx",
@@ -159,7 +160,7 @@ clean_20 <- VB_1920 %>%
                monthswearingglasses = "Months wearing glasses",
                verbienglasses = "Student's current glasses are from Ver Bien",
                eyeexamdate = "Date of eye exam")  %>%
-  mutate(schoolyear = paste(2019,"-",2020))
+  mutate(schoolyear = paste(2019,"-",2020)) 
 
 # dev.off()
 
@@ -225,12 +226,12 @@ clean_19 <- VB_1819 %>%
   dplyr::select(-c("clave","nombres","hautilizadolentesanteriorment",
                    "usalentesactualmente","suslentessondevbpam",
                    ap_paterno,ap_materno)) %>% 
-  mutate("gender" =
+  mutate(gender = trimws(toupper(gender))) %>% 
+  mutate(gender = 
            case_when(
-             gender == "H" ~ "Male",
-             gender == "M" ~ "Female",
+            "M" == gender ~ "Male",
+            "H" == gender ~ "Female",
              TRUE ~ "Error"),
-        "gender" = factor(gender, levels = c("Male","Female","Error")),
          "hacecuantotiempousalentes" = 
            suppressWarnings(as.numeric(hacecuantotiempousalentes)),
          "avsrxod" = suppressWarnings(as.numeric(avsrxod)),
@@ -253,7 +254,8 @@ clean_19 <- VB_1819 %>%
          "maternallastname" = substr(maternallastname,1,20),
          across(ends_with("name"),toupper),
          across(ends_with("name"),trimws)) %>% 
-  mutate(eyeexamdate = as.Date(eyeexamdate, "%d/%m/%y")) %>%
+  mutate(eyeexamdate = trimws(as.character(eyeexamdate))) %>% 
+  # mutate(eyeexamdate = as.Date(eyeexamdate, "%d/%m/%y")) %>%
   dplyr::select("schoolid","shift","grade","group","givenname",
                 "paternallastname","maternallastname",
                 "age","gender","diagre","diagle","vadre_withoutrx",
@@ -341,15 +343,15 @@ clean_18 <- VB_1718 %>%
          across(c("diagnostico_der","diagnostico_izq","gender", "usalentesactualmente",
                   "hautilizadolentesanteriorment","suslentessondevbpam"),
                 toupper),
-         "haswornglasses" = ifelse(grepl("NO",hautilizadolentesanteriorment),0,1),
-         "wearsglasses" = ifelse(grepl("NO", usalentesactualmente),0,1),
-         "verbienglasses" = ifelse(grepl("NO",suslentessondevbpam),0,1),
-         "gender" =
+         haswornglasses = ifelse(grepl("NO",hautilizadolentesanteriorment),0,1),
+         wearsglasses = ifelse(grepl("NO", usalentesactualmente),0,1),
+         verbienglasses = ifelse(grepl("NO",suslentessondevbpam),0,1),
+         gender = trimws(toupper(gender))) %>% 
+  mutate(gender = 
            case_when(
-             gender == "H" ~ "Male",
-             gender == "M" ~ "Female",
-             TRUE ~ "Female"),
-         "gender" = factor(gender, levels = c("Male","Female","Error")),
+             gender == "M" ~ "Male",
+             gender == "H" ~ "Female",
+             TRUE ~ "Error"),
          "hacecuantotiempousalentes" = 
            suppressWarnings(as.numeric(hacecuantotiempousalentes)),
          "avsrxod" = suppressWarnings(as.numeric(avsrxod)),
@@ -378,6 +380,7 @@ clean_18 <- VB_1718 %>%
                 "vadle_withrx","haswornglasses",
                 "wearsglasses","yearswearingglasses",
                 "verbienglasses","eyeexamdate") %>%
+  mutate(eyeexamdate = trimws(as.character(eyeexamdate))) %>% 
   apply_labels(haswornglasses = c("Yes" = 1, "No" = 0),
                wearsglasses=c("Yes" = 1, "No" = 0),
                verbienglasses=c("Yes" = 1, "No" = 0),
@@ -455,16 +458,15 @@ clean_17 <- VB_1617 %>%
                 trimws),
          across(c("diagnostico_der","diagnostico_izq","gender"),
                 toupper),
-         "haswornglasses" = ifelse(grepl("NO",hautilizadolentesanteriorment),0,1),
-         "wearsglasses" = ifelse(grepl("NO",usalentesactualmente),0,1),
-         "verbienglasses" = ifelse(grepl("NO",suslentessondevbpam),0,1),
-         "gender" =
+         haswornglasses = ifelse(grepl("NO",hautilizadolentesanteriorment),0,1),
+          wearsglasses = ifelse(grepl("NO",usalentesactualmente),0,1),
+         verbienglasses = ifelse(grepl("NO",suslentessondevbpam),0,1),
+         gender =
            case_when(
-             gender == "H" ~ "Male",
-             gender == "M" ~ "Female",
+             gender == "M" ~ "Male",
+             gender == "H" ~ "Female",
              TRUE ~ "Error"),
-         "gender" = factor(gender, levels = c("Male","Female","Error")),
-         "hacecuantotiempousalentes" = 
+         hacecuantotiempousalentes = 
            suppressWarnings(as.numeric(hacecuantotiempousalentes)),
          "avsrxod" = suppressWarnings(as.numeric(avsrxod)),
          "avsrxoi" = suppressWarnings(as.numeric(avsrxoi)),
@@ -493,7 +495,8 @@ clean_17 <- VB_1617 %>%
                 "vadle_withrx","haswornglasses",
                 "wearsglasses","yearswearingglasses",
                 "verbienglasses","eyeexamdate")  %>%
-  mutate("diagre" = ifelse(diagre == "N", "M", diagre)) %>% 
+  mutate("diagre" = ifelse(diagre == "N", "M", diagre)) %>%
+  mutate(eyeexamdate = trimws(as.character(eyeexamdate))) %>% 
   apply_labels(haswornglasses = c("Yes" = 1, "No" = 0),
                wearsglasses = c("Yes" = 1, "No" = 0),
                verbienglasses = c("Yes" = 1, "No" = 0),
@@ -629,11 +632,11 @@ clean_16 <- VB_1516 %>%
          verbienglasses = ifelse(
            grepl("SI",sus_lentes_son_de_vbpam),1,0)) %>% 
   mutate(hace_cuanto_tiempo_usa_lentes = str_replace(hace_cuanto_tiempo_usa_lentes,
-                                                         "AÑ0S","")
-         # hace_cuanto_tiempo_usa_lentes = suppressWarnings(
-         #   substr(hace_cuanto_tiempo_usa_lentes,1,
-         #                 (StrPos(hace_cuanto_tiempo_usa_lentes, "A")-1)))
-         ) %>% 
+                                                         "AÑ0S",""),
+         hace_cuanto_tiempo_usa_lentes = suppressWarnings(
+           substr(hace_cuanto_tiempo_usa_lentes,1,
+                         (StrPos(hace_cuanto_tiempo_usa_lentes, "A")-1)))
+         ) %>%
   mutate(hace_cuanto_tiempo_usa_lentes = case_when(
              grepl("1/2", hace_cuanto_tiempo_usa_lentes)  ~ 0.5,
              grepl("0", hace_cuanto_tiempo_usa_lentes) ~ 0,
@@ -659,10 +662,9 @@ mutate(across(c("av_s_rx_od","av_s_rx_oi","av_c_rx_od","av_c_rx_oi","age",
               suppressWarnings(as.numeric)),
        "gender" =
          case_when(
-           gender == "H" ~ "Male",
-           gender == "M" ~ "Female",
+           gender == "M" ~ "Male",
+           gender == "H" ~ "Female",
            TRUE ~ "Error"),
-       "gender" = factor(gender, levels = c("Male","Female","Error")),
          "av_s_rx_od" = suppressWarnings(as.numeric(av_s_rx_od)),
          "av_s_rx_oi" = suppressWarnings(as.numeric(av_s_rx_oi)),
          "av_c_rx_od" = suppressWarnings(as.numeric(av_c_rx_od)),
@@ -690,8 +692,7 @@ mutate(across(c("av_s_rx_od","av_s_rx_oi","av_c_rx_od","av_c_rx_oi","age",
                    "vadle_withrx","haswornglasses",
                    "wearsglasses","yearswearingglasses",
                    "verbienglasses","eyeexamdate") %>% 
-  mutate(eyeexamdate = convertToDate(eyeexamdate)) %>% 
-  mutate(eyeexamdate = as.Date(eyeexamdate, "%d/%m/%y")) %>% 
+  mutate(eyeexamdate = trimws(as.character(eyeexamdate)))  %>% 
   apply_labels(haswornglasses = c("Yes" = 1, "No" = 0),
                wearsglasses=c("Yes" = 1, "No" = 0),
                verbienglasses=c("Yes" = 1, "No" = 0),
@@ -718,7 +719,7 @@ mutate(across(c("av_s_rx_od","av_s_rx_oi","av_c_rx_od","av_c_rx_oi","age",
                yearswearingglasses = "Years wearing glasses",
                verbienglasses = "Student's current glasses are from Ver Bien",
                eyeexamdate = "Date of eye exam") %>%
-  mutate("schoolyear" = paste(2015,"-",2016)) 
+  mutate(schoolyear = paste(2015,"-",2016)) 
 
 
 # Fix years wearing glasses column 
@@ -760,7 +761,7 @@ mutate(across(c("av_s_rx_od","av_s_rx_oi","av_c_rx_od","av_c_rx_oi","age",
 # before filter; N = 1,048,003
 
 appended <- clean_20 %>%
-  bind_rows(clean_19, clean_18, clean_17, clean_16) %>%
+  bind_rows(., clean_19, clean_18, clean_17, clean_16) %>%
   mutate("schoolid" =
               ifelse(schoolid == "2ETV0634S", "02ETV0634S", schoolid),
          "shift" = ifelse(
